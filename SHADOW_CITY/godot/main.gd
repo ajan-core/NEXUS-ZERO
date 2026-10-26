@@ -196,7 +196,11 @@ func _make_hud() -> void:
 func _add_touch_button(root: Control, caption: String, offset: Vector2, action: String) -> void:
     var button := TouchScreenButton.new()
     button.name = "Touch_" + action
-    button.position = Vector2(105, 0) + offset if offset.x >= 0 else Vector2(get_viewport().get_visible_rect().size.x + offset.x, get_viewport().get_visible_rect().size.y + offset.y)
+    var screen_size := get_viewport().get_visible_rect().size
+    if offset.x >= 0:
+        button.position = Vector2(24.0 + offset.x, screen_size.y - 190.0 + (offset.y + 152.0))
+    else:
+        button.position = Vector2(screen_size.x + offset.x, screen_size.y + offset.y)
     # TouchScreenButton uses an input action and is lightweight on Android.
     button.action = action
     var circle := CircleShape2D.new()
