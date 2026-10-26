@@ -24,10 +24,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private final int bg = Color.rgb(9, 10, 13), panel = Color.rgb(24, 24, 27),
-        panel2 = Color.rgb(34, 33, 29), gold = Color.rgb(226, 187, 91),
-        goldLight = Color.rgb(255, 225, 145), ink = Color.rgb(248, 246, 240),
-        muted = Color.rgb(166, 164, 156);
+    private final int bg = Color.rgb(9, 10, 20), panel = Color.rgb(22, 25, 42),
+        panel2 = Color.rgb(30, 28, 50), gold = Color.rgb(124, 92, 255),
+        goldLight = Color.rgb(190, 174, 255), ink = Color.rgb(247, 246, 255),
+        muted = Color.rgb(169, 169, 192);
     LinearLayout root, messages;
     EditText prompt, keyInput, modelInput, endpointInput;
     Spinner providerSpinner;
@@ -113,30 +113,56 @@ public class MainActivity extends Activity {
     }
 
     void showChat() {
-        base("WELCOME BACK", "What shall we create?", "Your ideas, with a little intelligence.");
+        base("YOUR PERSONAL AI SPACE", "What can we create today?", "Ask anything, explore ideas, or start with a quick prompt.");
         LinearLayout nav = new LinearLayout(this); nav.setGravity(Gravity.CENTER_VERTICAL);
-        Button settings = button("⚙  Settings"); settings.setOnClickListener(v -> showSettings());
-        Button fresh = button("＋  New chat"); fresh.setOnClickListener(v -> { messages.removeAllViews(); addMessage("JANIXIA", "A fresh start. What would you like to explore?"); });
+        Button settings = button("⚙  API Settings"); settings.setOnClickListener(v -> showSettings());
+        Button fresh = button("＋  Clear chat"); fresh.setOnClickListener(v -> {
+            messages.removeAllViews();
+            addMessage("JANIXIA", "Fresh start ✨ What would you like to work on?");
+            addQuickPrompts();
+        });
         nav.addView(settings, new LinearLayout.LayoutParams(0, dp(46), 1));
         View spacer = new View(this); nav.addView(spacer, lp(8,1));
         nav.addView(fresh, new LinearLayout.LayoutParams(0, dp(46), 1)); root.addView(nav);
-        gap(root, 8);
-        scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false);
+        gap(root, 10);
+        scroll = new ScrollView(this); scroll.setFillViewport(false); scroll.setClipToPadding(false);
         messages = column(); messages.setPadding(dp(1), dp(4), dp(1), dp(10)); scroll.addView(messages);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        LinearLayout composer = column(); composer.setPadding(dp(10), dp(8), dp(10), dp(8));
-        composer.setBackground(outline(panel, Color.rgb(57,55,48), 22));
-        prompt = new EditText(this); prompt.setHint("Message JANIXIA…"); prompt.setHintTextColor(muted);
+        addMessage("JANIXIA", "Hey! I'm JANIXIA, your personal AI space. ✨\\n\\nI can help you write, learn, plan, brainstorm, and code. Choose a quick start below or ask me anything.");
+        addQuickPrompts();
+        LinearLayout composer = new LinearLayout(this); composer.setGravity(Gravity.CENTER_VERTICAL);
+        composer.setPadding(dp(10), dp(6), dp(6), dp(6));
+        composer.setBackground(outline(panel, Color.rgb(62, 55, 105), 24));
+        prompt = new EditText(this); prompt.setHint("Ask JANIXIA anything…"); prompt.setHintTextColor(muted);
         prompt.setTextColor(ink); prompt.setTextSize(15); prompt.setMinLines(1); prompt.setMaxLines(4);
-        prompt.setBackgroundColor(Color.TRANSPARENT); prompt.setPadding(dp(6), dp(4), dp(6), dp(4));
-        composer.addView(prompt, lp(-1,-2));
-        LinearLayout actions = new LinearLayout(this); actions.setGravity(Gravity.CENTER_VERTICAL);
-        actions.addView(text("✦  Gemini-ready", 11, muted, false), new LinearLayout.LayoutParams(0, dp(36), 1));
-        Button send = button("Send  ↑"); send.setOnClickListener(v -> sendMessage()); actions.addView(send, lp(-2,42));
-        composer.addView(actions); root.addView(composer);
-        TextView foot = text("AI can make mistakes · Check important information", 10, muted, false); foot.setGravity(Gravity.CENTER);
+        prompt.setBackgroundColor(Color.TRANSPARENT); prompt.setPadding(dp(8), dp(8), dp(6), dp(8));
+        composer.addView(prompt, new LinearLayout.LayoutParams(0, -2, 1));
+        Button send = button("Send  ↑"); send.setOnClickListener(v -> sendMessage());
+        composer.addView(send, lp(-2, 48)); root.addView(composer);
+        TextView foot = text("✦  JANIXIA AI  ·  AI can make mistakes", 10, muted, false); foot.setGravity(Gravity.CENTER);
         root.addView(foot);
-        addMessage("JANIXIA", "Welcome to your personal AI studio. Add your Gemini API key in Settings to begin. Your API key is not included in this app.");
+    }
+
+    void addQuickPrompts() {
+        LinearLayout section = column();
+        TextView heading = text("QUICK START", 10, gold, true);
+        heading.setLetterSpacing(0.12f); section.addView(heading);
+        String[][] items = {
+            {"✍  Write something", "Help me write a great social media post."},
+            {"💡  Brainstorm ideas", "Give me 5 creative ideas for a new project."},
+            {"💻  Help me code", "Help me build a simple mobile-friendly website."},
+            {"📚  Explain a topic", "Explain an interesting topic in simple words."}
+        };
+        for (String[] item : items) {
+            Button b = new Button(this); b.setText(item[0]); b.setTextColor(ink); b.setTextSize(13);
+            b.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT); b.setAllCaps(false);
+            b.setPadding(dp(14), dp(5), dp(14), dp(5));
+            b.setBackground(outline(panel, Color.rgb(52, 48, 76), 16));
+            LinearLayout.LayoutParams p = lp(-1, 44); p.setMargins(dp(2), dp(3), dp(2), dp(3));
+            section.addView(b, p);
+            b.setOnClickListener(v -> { prompt.setText(item[1]); prompt.setSelection(prompt.length()); prompt.requestFocus(); });
+        }
+        messages.addView(section, lp(-1, -2));
     }
 
     void addMessage(String who, String body) {
