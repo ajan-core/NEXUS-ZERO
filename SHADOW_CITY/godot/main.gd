@@ -317,4 +317,9 @@ func _attack() -> void:
         pulse.material_override = _material(Color(0.15, 0.8, 1.0, 0.35), Color(0.05, 0.5, 1.0))
         pulse.position = hero.position + Vector3(0, 1, -1.2)
         add_child(pulse)
-        get_tree().create_timer(0.16).timeout.connect(func(): if is_instance_valid(pulse): pulse.queue_free())
+        var pulse_timer := get_tree().create_timer(0.16)
+        pulse_timer.timeout.connect(_remove_pulse.bind(pulse))
+
+func _remove_pulse(pulse: Node) -> void:
+    if is_instance_valid(pulse):
+        pulse.queue_free()
