@@ -1,0 +1,30 @@
+name: Shadow City Godot Check
+
+on:
+  push:
+    branches:
+      - game/shadow-city-prototype
+    paths:
+      - "SHADOW_CITY/godot/**"
+      - ".github/workflows/shadow-city-check.yml"
+  pull_request:
+    paths:
+      - "SHADOW_CITY/godot/**"
+      - ".github/workflows/shadow-city-check.yml"
+  workflow_dispatch:
+
+jobs:
+  validate-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Godot 4
+        uses: chickensoft/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+
+      - name: Import and parse project headlessly
+        run: godot --headless --path SHADOW_CITY/godot --editor --quit
