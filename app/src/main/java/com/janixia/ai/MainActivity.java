@@ -128,7 +128,7 @@ public class MainActivity extends Activity {
         scroll = new ScrollView(this); scroll.setFillViewport(false); scroll.setClipToPadding(false);
         messages = column(); messages.setPadding(dp(1), dp(4), dp(1), dp(10)); scroll.addView(messages);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        addMessage("JANIXIA", "Hey! I'm JANIXIA, your personal AI space. ✨\\n\\nI can help you write, learn, plan, brainstorm, and code. Choose a quick start below or ask me anything.");
+        addMessage("JANIXIA", "Hey! I'm JANIXIA, your personal AI space. ✨\n\nI can help you write, learn, plan, brainstorm, and code. Choose a quick start below or ask me anything.");
         addQuickPrompts();
         LinearLayout composer = new LinearLayout(this); composer.setGravity(Gravity.CENTER_VERTICAL);
         composer.setPadding(dp(10), dp(6), dp(6), dp(6));
@@ -252,30 +252,52 @@ public class MainActivity extends Activity {
         String provider = prefs.getString("provider", "gemini"), key = prefs.getString("key", "");
         String model = prefs.getString("model", provider.equals("gemini") ? "gemini-2.5-flash" : "gpt-4o-mini");
         String urlString, body;
+        if (key.trim().isEmpty()) throw new Exception("API key is missing. Open API Settings and add your key.");
+        if (model.trim().isEmpty()) model = provider.equals("gemini") ? "gemini-2.5-flash" : "gpt-4o-mini";
         if (provider.equals("gemini")) {
-            urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + key;
+            urlString = "https://generativelanguage.googleapis.com/v1beta/models/" + java.net.URLEncoder.encode(model, "UTF-8") + ":generateContent";
             JSONObject part = new JSONObject().put("text", q);
             body = new JSONObject().put("contents", new JSONArray().put(new JSONObject().put("parts", new JSONArray().put(part)))).toString();
         } else {
-            urlString = prefs.getString("endpoint", "https://api.openai.com/v1/chat/completions");
+            urlString = prefs.getString("endpoint", "https://api.openai.com/v1/chat/completions").trim();
+            if (!urlString.startsWith("https://")) throw new Exception("API endpoint must start with https://");
             body = new JSONObject().put("model", model).put("messages", new JSONArray().put(new JSONObject().put("role","user").put("content",q))).toString();
         }
         HttpURLConnection c = (HttpURLConnection)new URL(urlString).openConnection();
         c.setRequestMethod("POST"); c.setConnectTimeout(20000); c.setReadTimeout(45000);
         c.setRequestProperty("Content-Type","application/json");
-        if (provider.equals("openai")) c.setRequestProperty("Authorization","Bearer " + key);
+        if (provider.equals("gemini")) c.setRequestProperty("x-goog-api-key", key);
+        else c.setRequestProperty("Authorization","Bearer " + key);
         c.setDoOutput(true);
         try (OutputStream os = c.getOutputStream()) { os.write(body.getBytes(StandardCharsets.UTF_8)); }
         int code = c.getResponseCode();
         InputStream is = code >= 200 && code < 300 ? c.getInputStream() : c.getErrorStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream(); byte[] buf = new byte[4096]; int n;
-        while ((n = is.read(buf)) > 0) out.write(buf,0,n);
-        is.close(); c.disconnect();
+        if (is != null) {
+            try (InputStream responseStream = is) { while ((n = responseStream.read(buf)) > 0) out.write(buf,0,n); }
+        }
         String response = new String(out.toByteArray(), StandardCharsets.UTF_8);
-        if (code < 200 || code >= 300) throw new Exception("HTTP " + code + ": " + response);
+        c.disconnect();
+        if (code < 200 || code >= 300) {
+            String detail = response;
+            try {
+                JSONObject err = new JSONObject(response);
+                if (err.has("error")) detail = err.getJSONObject("error").optString("message", response);
+            } catch (Exception ignored) { }
+            throw new Exception("HTTP " + code + ": " + detail);
+        }
         JSONObject json = new JSONObject(response);
-        if (provider.equals("gemini")) return json.getJSONArray("candidates").getJSONObject(0).getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text");
-        return json.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        if (provider.equals("gemini")) {
+            JSONArray candidates = json.optJSONArray("candidates");
+            if (candidates == null || candidates.length() == 0) throw new Exception("The model returned no answer. Check the model name or API quota.");
+            JSONObject content = candidates.getJSONObject(0).optJSONObject("content");
+            JSONArray parts = content == null ? null : content.optJSONArray("parts");
+            if (parts == null || parts.length() == 0) throw new Exception("The model returned an empty answer.");
+            return parts.getJSONObject(0).optString("text", "The model returned an empty answer.");
+        }
+        JSONArray choices = json.optJSONArray("choices");
+        if (choices == null || choices.length() == 0) throw new Exception("The API returned no answer. Check the model name and endpoint.");
+        return choices.getJSONObject(0).getJSONObject("message").optString("content", "The model returned an empty answer.");
     }
     @Override protected void onDestroy() { super.onDestroy(); executor.shutdownNow(); }
 }
