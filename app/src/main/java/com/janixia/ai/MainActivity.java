@@ -24,10 +24,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private final int bg = Color.rgb(9, 10, 20), panel = Color.rgb(22, 25, 42),
-        panel2 = Color.rgb(30, 28, 50), gold = Color.rgb(124, 92, 255),
-        goldLight = Color.rgb(190, 174, 255), ink = Color.rgb(247, 246, 255),
-        muted = Color.rgb(169, 169, 192);
+    // JANIXIA Studio visual refresh: deep midnight canvas + vivid violet/blue accents.
+    private final int bg = Color.rgb(10, 12, 24), panel = Color.rgb(22, 25, 43),
+        panel2 = Color.rgb(31, 34, 58), gold = Color.rgb(111, 92, 255),
+        goldLight = Color.rgb(190, 181, 255), ink = Color.rgb(248, 249, 255),
+        muted = Color.rgb(165, 173, 198);
     LinearLayout root, messages;
     EditText prompt, keyInput, modelInput, endpointInput;
     Spinner providerSpinner;
@@ -63,12 +64,15 @@ public class MainActivity extends Activity {
         Button b = new Button(this); b.setText(label); b.setTextColor(bg);
         b.setTextSize(13); b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         b.setAllCaps(false); b.setPadding(dp(12), dp(4), dp(12), dp(4));
-        b.setBackground(shape(gold, 18)); return b;
+        GradientDrawable premium = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{Color.rgb(111, 92, 255), Color.rgb(57, 128, 255)});
+        premium.setCornerRadius(dp(18));
+        b.setBackground(premium); return b;
     }
     EditText edit(String hint, String value, boolean secret) {
         EditText e = new EditText(this); e.setSingleLine(!secret); e.setText(value); e.setHint(hint);
         e.setHintTextColor(muted); e.setTextColor(ink); e.setTextSize(15);
-        e.setPadding(dp(14), dp(10), dp(14), dp(10)); e.setBackground(outline(panel, Color.rgb(57,55,48), 16));
+        e.setPadding(dp(14), dp(10), dp(14), dp(10)); e.setBackground(outline(panel, Color.rgb(67, 73, 112), 16));
         if (secret) e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         return e;
     }
@@ -108,7 +112,9 @@ public class MainActivity extends Activity {
         gap(root, 16);
         root.addView(text(eyebrow.toUpperCase(), 10, gold, true));
         root.addView(text(title, 25, ink, true));
-        root.addView(text(subtitle, 13, muted, false));
+        TextView sub = text(subtitle, 13, muted, false);
+        sub.setPadding(dp(10), dp(4), dp(10), dp(7));
+        root.addView(sub);
         gap(root, 10);
     }
 
@@ -132,7 +138,7 @@ public class MainActivity extends Activity {
         addQuickPrompts();
         LinearLayout composer = new LinearLayout(this); composer.setGravity(Gravity.CENTER_VERTICAL);
         composer.setPadding(dp(10), dp(6), dp(6), dp(6));
-        composer.setBackground(outline(panel, Color.rgb(62, 55, 105), 24));
+        composer.setBackground(outline(panel, Color.rgb(91, 91, 166), 24));
         prompt = new EditText(this); prompt.setHint("Ask JANIXIA anything…"); prompt.setHintTextColor(muted);
         prompt.setTextColor(ink); prompt.setTextSize(15); prompt.setMinLines(1); prompt.setMaxLines(4);
         prompt.setBackgroundColor(Color.TRANSPARENT); prompt.setPadding(dp(8), dp(8), dp(6), dp(8));
@@ -157,7 +163,7 @@ public class MainActivity extends Activity {
             Button b = new Button(this); b.setText(item[0]); b.setTextColor(ink); b.setTextSize(13);
             b.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT); b.setAllCaps(false);
             b.setPadding(dp(14), dp(5), dp(14), dp(5));
-            b.setBackground(outline(panel, Color.rgb(52, 48, 76), 16));
+            b.setBackground(outline(panel2, Color.rgb(58, 67, 112), 16));
             LinearLayout.LayoutParams p = lp(-1, 44); p.setMargins(dp(2), dp(3), dp(2), dp(3));
             section.addView(b, p);
             b.setOnClickListener(v -> { prompt.setText(item[1]); prompt.setSelection(prompt.length()); prompt.requestFocus(); });
@@ -168,7 +174,8 @@ public class MainActivity extends Activity {
     void addMessage(String who, String body) {
         boolean assistant = who.equals("JANIXIA");
         LinearLayout bubble = column(); bubble.setPadding(dp(13), dp(10), dp(13), dp(10));
-        bubble.setBackground(outline(assistant ? panel : Color.rgb(39,33,20), assistant ? Color.rgb(54,51,43) : Color.rgb(107,83,37), 18));
+        bubble.setBackground(outline(assistant ? panel : Color.rgb(34, 38, 68),
+            assistant ? Color.rgb(57, 64, 104) : Color.rgb(87, 91, 180), 18));
         TextView label = text(assistant ? "✦  JANIXIA" : "YOU", 10, assistant ? gold : goldLight, true);
         bubble.addView(label);
         TextView bodyView = text(body, 14, ink, false); bodyView.setPadding(dp(10), dp(4), dp(10), dp(6)); bodyView.setLineSpacing(dp(2), 1f);
