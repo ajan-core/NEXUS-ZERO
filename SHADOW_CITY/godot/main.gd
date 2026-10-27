@@ -12,6 +12,9 @@ var xp := 0
 var level := 1
 var enemies: Array[Node3D] = []
 var attack_cooldown := 0.0
+var enemy_damage_cooldown := 0.0
+var kills := 0
+const MISSION_KILLS := 10
 var touch_move := Vector2.ZERO
 var hud_label: Label
 var hp_bar: ProgressBar
@@ -217,7 +220,7 @@ func _add_touch_button(root: Control, caption: String, offset: Vector2, action: 
 
 func _refresh_hud() -> void:
     if is_instance_valid(hud_label):
-        hud_label.text = "LEVEL %02d   •   XP %03d   •   SHARDS %03d" % [level, xp, xp / 5]
+        hud_label.text = "LEVEL %02d   •   XP %03d   •   SHARDS %03d   •   KILLS %02d/%02d" % [level, xp, xp / 5, kills, MISSION_KILLS]
     if is_instance_valid(hp_bar):
         hp_bar.value = health
 
@@ -237,6 +240,7 @@ func _physics_process(delta: float) -> void:
     if not is_instance_valid(hero):
         return
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
+    enemy_damage_cooldown = maxf(0.0, enemy_damage_cooldown - delta)
     var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
     var basis := Basis(Vector3.UP, yaw)
     var direction := basis * Vector3(input_vec.x, 0, input_vec.y)
@@ -287,6 +291,12 @@ func _update_enemies(delta: float) -> void:
         to_hero.y = 0
         if to_hero.length() > 1.6:
             enemy.global_position += to_hero.normalized() * delta * 1.4
+        elif enemy_damage_cooldown <= 0.0:
+            health = maxi(0, health - 8)
+            enemy_damage_cooldown = 0.8
+            _refresh_hud()
+            if health <= 0:
+                _respawn_hero()
 
 func _attack() -> void:
     attack_cooldown = 0.45
@@ -301,12 +311,16 @@ func _attack() -> void:
     if is_instance_valid(target):
         enemies.erase(target)
         target.queue_free()
+        kills += 1
         xp += 15
         if xp >= level * 60:
             level += 1
             health = mini(100, health + 20)
         _refresh_hud()
-        _spawn_enemies(1)
+        if kills >= MISSION_KILLS:
+            hud_label.text = "MISSION COMPLETE!  •  LEVEL %02d  •  XP %03d" % [level, xp]
+        else:
+            _spawn_enemies(1)
     else:
         # Keep an energy-pulse visual even when no enemy is close enough.
         var pulse := MeshInstance3D.new()
@@ -323,3 +337,9 @@ func _attack() -> void:
 func _remove_pulse(pulse: Node) -> void:
     if is_instance_valid(pulse):
         pulse.queue_free()
+
+func _respawn_hero() -> void:
+    health = 100
+    hero.global_position = Vector3(0, 1.2, 12)
+    hero.velocity = Vector3.ZERO
+    _refresh_hud()
